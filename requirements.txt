@@ -1,0 +1,9 @@
+streamlit
+PyPDF2
+pandas
+regex
+string
+nltk
+scikit-learn
+wordcloud
+matplotlib
