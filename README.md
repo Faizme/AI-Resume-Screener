@@ -1,5 +1,7 @@
 # 👍 AI Resume Screening & Ranking System  
 
+🔗 **Live Demo:** [Try it here](https://ai-resume-screener.streamlit.app/)  
+
 An AI-powered application that helps recruiters efficiently screen and rank resumes based on job descriptions using **Natural Language Processing (NLP)** techniques. The system also provides **keyword analysis** via word clouds to highlight essential skills and terms.  
 
 ## ⚡ Features  
