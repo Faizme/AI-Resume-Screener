@@ -11,19 +11,27 @@ from sklearn.metrics.pairwise import cosine_similarity
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 
-# Download necessary resources
-nltk.download("stopwords")
-nltk.download("punkt")
+# Download necessary resources (fixes NLTK error)
+nltk_dependencies = ["stopwords", "punkt"]
+for dep in nltk_dependencies:
+    try:
+        nltk.data.find(f"tokenizers/{dep}")
+    except LookupError:
+        nltk.download(dep)
+
+stop_words = set(stopwords.words("english"))
 
 # Streamlit page configuration
 st.set_page_config(page_title="AI Resume Screening", layout="wide")
-stop_words = set(stopwords.words("english"))
 
 # Function to extract text from PDFs
 def extract_text_from_pdf(file):
-    pdf = PdfReader(file)
-    text = "".join([page.extract_text() or "" for page in pdf.pages])
-    return text
+    try:
+        pdf = PdfReader(file)
+        text = " ".join([page.extract_text() or "" for page in pdf.pages if page.extract_text()])
+        return text.strip()
+    except Exception as e:
+        return f"Error extracting text: {str(e)}"
 
 # Function to preprocess text
 def preprocess_text(text):
@@ -52,12 +60,7 @@ st.sidebar.subheader("ℹ️ About")
 st.sidebar.info(
     "**Developed by Mohammed Faiz**\n\n"
     "This application helps recruiters efficiently screen resumes based on job descriptions using AI. "
-    "By utilizing Natural Language Processing (NLP) techniques, the system ranks resumes based on their relevance to the given job description. "
-    "It also provides keyword analysis using word clouds to highlight essential skills and terms.\n\n"
-    "👨‍💻 **About the Developer:**\n"
-    "Mohammed Faiz is an aspiring software developer with expertise in Python, Java, C, HTML, CSS, JavaScript, and SQL. "
-    "He has experience in data analysis, web development, and AI-driven applications. "
-    "Connect with Faiz on [GitHub](https://github.com/Faizme) or [LinkedIn](https://www.linkedin.com/in/mohammed-faiz-me)."
+    "By utilizing Natural Language Processing (NLP) techniques, the system ranks resumes based on their relevance to the given job description."
 )
 
 # Job description input
@@ -66,7 +69,9 @@ job_description = st.text_area("Enter the job description")
 
 # File uploader
 st.header("📂 Upload Resumes")
-uploaded_files = st.file_uploader("Upload resumes (PDF only)", type=["pdf"], accept_multiple_files=True, key="file_uploader", help="Drag and drop files here.")
+uploaded_files = st.file_uploader(
+    "Upload resumes (PDF only)", type=["pdf"], accept_multiple_files=True
+)
 
 def extract_text_from_file(file):
     return extract_text_from_pdf(file)
@@ -74,6 +79,7 @@ def extract_text_from_file(file):
 if uploaded_files and job_description:
     st.header("📊 Ranking Resumes")
     progress = st.progress(0)
+    
     resumes = [extract_text_from_file(file) for file in uploaded_files]
     
     if resumes:
