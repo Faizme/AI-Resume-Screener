@@ -114,4 +114,4 @@ if uploaded_files and job_description:
         fig, ax = plt.subplots()
         ax.imshow(wordcloud, interpolation='bilinear')
         ax.axis("off")
-        st.pyplot(fig)s
+        st.pyplot(fig)
