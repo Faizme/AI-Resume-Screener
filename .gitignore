@@ -1,0 +1,6 @@
+nltk_data/*
+!nltk_data/corpora/stopwords/english
+!nltk_data/tokenizers/punkt/PY3/*
+__pycache__/
+*.zip
+*.log
