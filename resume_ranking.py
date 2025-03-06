@@ -17,7 +17,11 @@ NLTK_DATA_PATH = os.path.join(os.path.dirname(__file__), "nltk_data")
 nltk.data.path.append(NLTK_DATA_PATH)
 
 # Ensure necessary NLTK resources are available
-nltk_dependencies = [("corpora/stopwords", "stopwords"), ("tokenizers/punkt", "punkt")]
+nltk_dependencies = [
+    ("corpora/stopwords", "stopwords"),
+    ("tokenizers/punkt", "punkt"),
+    ("tokenizers/punkt_tab", "punkt_tab"),
+]
 for path, dep in nltk_dependencies:
     try:
         nltk.data.find(path)
