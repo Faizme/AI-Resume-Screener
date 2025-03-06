@@ -12,17 +12,13 @@ from sklearn.metrics.pairwise import cosine_similarity
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 
-# Set up nltk_data path
-NLTK_DATA_PATH = os.path.join(os.path.dirname(__file__), "nltk_data")
-nltk.data.path.append(NLTK_DATA_PATH)
-
-# Ensure required resources are available
+# Ensure required NLTK resources are available
 nltk_resources = ["punkt", "stopwords"]
 for resource in nltk_resources:
     try:
-        nltk.data.find(f"corpora/{resource}")
+        nltk.data.find(f"tokenizers/{resource}")
     except LookupError:
-        nltk.download(resource, download_dir=NLTK_DATA_PATH)
+        nltk.download(resource)
 
 stop_words = set(stopwords.words("english"))
 
@@ -33,7 +29,7 @@ st.set_page_config(page_title="AI Resume Screening", layout="wide")
 def extract_text_from_pdf(file):
     try:
         pdf = PdfReader(file)
-        text = " ".join([page.extract_text() or "" for page in pdf.pages])  # Handle None cases
+        text = " ".join([page.extract_text() or "" for page in pdf.pages])
         return text.strip() if text.strip() else None
     except Exception as e:
         return None
