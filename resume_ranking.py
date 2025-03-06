@@ -4,6 +4,7 @@ import pandas as pd
 import re
 import string
 import nltk
+import os
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -11,13 +12,17 @@ from sklearn.metrics.pairwise import cosine_similarity
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 
-# Ensure necessary NLTK resources are downloaded
+# Set up local NLTK data path
+NLTK_DATA_PATH = os.path.join(os.path.dirname(__file__), "nltk_data")
+nltk.data.path.append(NLTK_DATA_PATH)
+
+# Ensure necessary NLTK resources are available
 nltk_dependencies = [("corpora/stopwords", "stopwords"), ("tokenizers/punkt", "punkt")]
 for path, dep in nltk_dependencies:
     try:
         nltk.data.find(path)
     except LookupError:
-        nltk.download(dep)
+        nltk.download(dep, download_dir=NLTK_DATA_PATH)
 
 stop_words = set(stopwords.words("english"))
 
@@ -29,7 +34,7 @@ def extract_text_from_pdf(file):
     try:
         pdf = PdfReader(file)
         text = " ".join([page.extract_text() or "" for page in pdf.pages])  # Handle None cases
-        return text.strip()
+        return text.strip() if text.strip() else "No readable text found."
     except Exception as e:
         return f"Error extracting text: {str(e)}"
 
@@ -43,13 +48,17 @@ def preprocess_text(text):
 
 # Function to rank resumes
 def rank_resumes(job_description, resumes):
-    processed_resumes = [preprocess_text(resume) for resume in resumes]
-    processed_job_desc = preprocess_text(job_description)
-    documents = [processed_job_desc] + processed_resumes
-    vectorizer = TfidfVectorizer().fit_transform(documents)
-    vectors = vectorizer.toarray()
-    cosine_similarities = cosine_similarity([vectors[0]], vectors[1:]).flatten()
-    return cosine_similarities
+    try:
+        processed_resumes = [preprocess_text(resume) for resume in resumes]
+        processed_job_desc = preprocess_text(job_description)
+        documents = [processed_job_desc] + processed_resumes
+        vectorizer = TfidfVectorizer().fit_transform(documents)
+        vectors = vectorizer.toarray()
+        cosine_similarities = cosine_similarity([vectors[0]], vectors[1:]).flatten()
+        return cosine_similarities
+    except Exception as e:
+        st.error(f"Error in ranking resumes: {str(e)}")
+        return []
 
 # Streamlit UI
 st.title("📄 AI Resume Screening & Ranking System")
@@ -85,7 +94,7 @@ if uploaded_files and job_description:
     resumes = []
     for file in uploaded_files:
         text = extract_text_from_pdf(file)
-        if text.startswith("Error extracting text"):
+        if text.startswith("Error extracting text") or text == "No readable text found.":
             st.error(f"❌ Failed to extract text from {file.name}")
         else:
             resumes.append(text)
@@ -95,23 +104,24 @@ if uploaded_files and job_description:
         scores = rank_resumes(job_description, resumes)
         progress.progress(100)
 
-        results = pd.DataFrame({"Resume": [file.name for file in uploaded_files], "Score": scores})
-        results = results.sort_values(by="Score", ascending=False)
-        st.dataframe(results)
+        if scores:
+            results = pd.DataFrame({"Resume": [file.name for file in uploaded_files], "Score": scores})
+            results = results.sort_values(by="Score", ascending=False)
+            st.dataframe(results)
 
-        if not results.empty:
-            top_candidate = results.iloc[0]
-            st.success(f"🏆 Top Candidate: {top_candidate['Resume']} with Score: {top_candidate['Score']:.2f}")
+            if not results.empty:
+                top_candidate = results.iloc[0]
+                st.success(f"🏆 Top Candidate: {top_candidate['Resume']} with Score: {top_candidate['Score']:.2f}")
 
-        # Download results
-        csv = results.to_csv(index=False)
-        st.download_button("📥 Download Results as CSV", csv, "ranking_results.csv", "text/csv")
+            # Download results
+            csv = results.to_csv(index=False)
+            st.download_button("📥 Download Results as CSV", csv, "ranking_results.csv", "text/csv")
 
-        # Word Cloud Visualization
-        st.header("📢 Resume Keyword Analysis")
-        all_text = " ".join(preprocess_text(resume) for resume in resumes)
-        wordcloud = WordCloud(width=800, height=400, background_color='white').generate(all_text)
-        fig, ax = plt.subplots()
-        ax.imshow(wordcloud, interpolation='bilinear')
-        ax.axis("off")
-        st.pyplot(fig)
+            # Word Cloud Visualization
+            st.header("📢 Resume Keyword Analysis")
+            all_text = " ".join(preprocess_text(resume) for resume in resumes)
+            wordcloud = WordCloud(width=800, height=400, background_color='white').generate(all_text)
+            fig, ax = plt.subplots()
+            ax.imshow(wordcloud, interpolation='bilinear')
+            ax.axis("off")
+            st.pyplot(fig)
