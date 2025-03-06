@@ -12,18 +12,17 @@ from sklearn.metrics.pairwise import cosine_similarity
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 
-# Set NLTK data path to the repo's nltk_data folder
-nltk.data.path.append(os.path.join(os.path.dirname(__file__), "nltk_data"))
-# Ensure the required tokenizer is available
-nltk.download('punkt', download_dir=os.path.join(os.path.dirname(__file__), "nltk_data"))
+# Set up nltk_data path
+NLTK_DATA_PATH = os.path.join(os.path.dirname(__file__), "nltk_data")
+nltk.data.path.append(NLTK_DATA_PATH)
 
-# Ensure necessary NLTK resources are available
-nltk_dependencies = [("corpora/stopwords", "stopwords"), ("tokenizers/punkt", "punkt")]
-for path, dep in nltk_dependencies:
+# Ensure required resources are available
+nltk_resources = ["punkt", "stopwords"]
+for resource in nltk_resources:
     try:
-        nltk.data.find(path)
+        nltk.data.find(f"corpora/{resource}")
     except LookupError:
-        nltk.download(dep, download_dir=NLTK_DATA_PATH)
+        nltk.download(resource, download_dir=NLTK_DATA_PATH)
 
 stop_words = set(stopwords.words("english"))
 
@@ -35,9 +34,9 @@ def extract_text_from_pdf(file):
     try:
         pdf = PdfReader(file)
         text = " ".join([page.extract_text() or "" for page in pdf.pages])  # Handle None cases
-        return text.strip() if text.strip() else "No readable text found."
+        return text.strip() if text.strip() else None
     except Exception as e:
-        return f"Error extracting text: {str(e)}"
+        return None
 
 # Function to preprocess text
 def preprocess_text(text):
@@ -58,7 +57,7 @@ def rank_resumes(job_description, resumes):
         cosine_similarities = cosine_similarity([vectors[0]], vectors[1:]).flatten()
         return cosine_similarities
     except Exception as e:
-        st.error(f"Error in ranking resumes: {str(e)}")
+        st.error(f"⚠️ Error in ranking resumes: {str(e)}")
         return []
 
 # Streamlit UI
@@ -70,12 +69,9 @@ st.sidebar.subheader("ℹ️ About")
 st.sidebar.info(
     "**Developed by Mohammed Faiz**\n\n"
     "This application helps recruiters efficiently screen resumes based on job descriptions using AI. "
-    "By utilizing Natural Language Processing (NLP) techniques, the system ranks resumes based on their relevance to the given job description. "
-    "It also provides keyword analysis using word clouds to highlight essential skills and terms.\n\n"
-    "👨‍💻 **About the Developer:**\n"
-    "Mohammed Faiz is an aspiring software developer with expertise in Python, Java, C, HTML, CSS, JavaScript, and SQL. "
-    "He has experience in data analysis, web development, and AI-driven applications. "
-    "Connect with Faiz on [GitHub](https://github.com/Faizme) or [LinkedIn](https://www.linkedin.com/in/mohammed-faiz-me)."
+    "It ranks resumes using NLP techniques and provides keyword analysis with word clouds.\n\n"
+    "👨‍💻 **Connect with Faiz:**\n"
+    "[GitHub](https://github.com/Faizme) | [LinkedIn](https://www.linkedin.com/in/mohammed-faiz-me)"
 )
 
 # Job description input
@@ -90,23 +86,27 @@ uploaded_files = st.file_uploader(
 
 if uploaded_files and job_description:
     st.header("📊 Ranking Resumes")
-    progress = st.progress(0)
+    progress = st.progress(10)
 
     resumes = []
+    valid_files = []
+    
     for file in uploaded_files:
         text = extract_text_from_pdf(file)
-        if text.startswith("Error extracting text") or text == "No readable text found.":
-            st.error(f"❌ Failed to extract text from {file.name}")
-        else:
+        if text:
             resumes.append(text)
+            valid_files.append(file.name)
+        else:
+            st.warning(f"⚠️ Skipped {file.name} (No readable text found)")
+
+    progress.progress(50)
 
     if resumes:
-        progress.progress(50)
         scores = rank_resumes(job_description, resumes)
-        progress.progress(100)
+        progress.progress(90)
 
-        if scores is not None and scores.size > 0:
-            results = pd.DataFrame({"Resume": [file.name for file in uploaded_files], "Score": scores})
+        if scores is not None and len(scores) > 0:
+            results = pd.DataFrame({"Resume": valid_files, "Score": scores})
             results = results.sort_values(by="Score", ascending=False)
             st.dataframe(results)
 
@@ -119,10 +119,15 @@ if uploaded_files and job_description:
             st.download_button("📥 Download Results as CSV", csv, "ranking_results.csv", "text/csv")
 
             # Word Cloud Visualization
-            st.header("📢 Resume Keyword Analysis")
-            all_text = " ".join(preprocess_text(resume) for resume in resumes)
-            wordcloud = WordCloud(width=800, height=400, background_color='white').generate(all_text)
-            fig, ax = plt.subplots()
-            ax.imshow(wordcloud, interpolation='bilinear')
-            ax.axis("off")
-            st.pyplot(fig)
+            if any(resumes):
+                st.header("📢 Resume Keyword Analysis")
+                all_text = " ".join(preprocess_text(resume) for resume in resumes)
+                wordcloud = WordCloud(width=800, height=400, background_color='white').generate(all_text)
+                fig, ax = plt.subplots()
+                ax.imshow(wordcloud, interpolation='bilinear')
+                ax.axis("off")
+                st.pyplot(fig)
+
+        progress.progress(100)
+    else:
+        st.error("❌ No valid resumes found. Please upload readable PDF resumes.")
