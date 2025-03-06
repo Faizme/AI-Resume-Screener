@@ -111,16 +111,24 @@ if uploaded_files and job_description:
         if scores is not None and scores.size > 0:
             results = pd.DataFrame({"Resume": [file.name for file in uploaded_files], "Score": scores})
             results = results.sort_values(by="Score", ascending=False)
+
+            # Add a ranking column starting from 1
+            results["Rank"] = range(1, len(results) + 1)
+
+            # Reorder columns to show Rank first
+            results = results[["Rank", "Resume", "Score"]]
+
+            # Display the results
             st.dataframe(results)
 
+            # Highlight the top candidate
             if not results.empty:
                 top_candidate = results.iloc[0]
                 st.success(f"🏆 Top Candidate: {top_candidate['Resume']} with Score: {top_candidate['Score']:.2f}")
 
-            # Download results
+            # Download results as CSV
             csv = results.to_csv(index=False)
             st.download_button("📥 Download Results as CSV", csv, "ranking_results.csv", "text/csv")
-
             # Word Cloud Visualization
             st.header("📢 Resume Keyword Analysis")
             all_text = " ".join(preprocess_text(resume) for resume in resumes)
