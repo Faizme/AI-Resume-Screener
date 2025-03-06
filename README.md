@@ -8,7 +8,7 @@ An AI-powered application that helps recruiters efficiently screen and rank resu
 ✅ **AI-Based Resume Ranking** – Uses **TF-IDF & Cosine Similarity** to rank resumes based on job descriptions.  
 ✅ **PDF Resume Parsing** – Extracts and processes text from uploaded PDF resumes.  
 ✅ **Keyword Analysis** – Generates a **word cloud** visualization of important keywords.  
-✅ **CSV Export** – Download the ranked resumes as a CSV file.  
+✅ **CSV Export** – Download ranked resumes with similarity scores in CSV format.  
 ✅ **User-Friendly UI** – Built using **Streamlit** for an intuitive experience.  
 
 ## 🚀 Installation & Usage  
@@ -29,7 +29,7 @@ pip install -r requirements.txt
 
 ### 3️⃣ Run the Application  
 ```bash  
-streamlit run app.py  
+streamlit run resume_ranking.py 
 ```
 
 ## 🛠️ Tech Stack  
@@ -42,8 +42,8 @@ streamlit run app.py
 👨‍💻 **Mohammed Faiz** – Aspiring software developer skilled in **Python, Java, C, HTML, CSS, JavaScript, and SQL**. Passionate about **data analysis, web development, and AI-driven applications**.  
 
 📞 Connect with me:  
-- **GitHub**: [Faiz's GitHub](https://github.com/Faizme)  
-- **LinkedIn**: [Faiz's LinkedIn](https://www.linkedin.com/mohammed-faiz-me)  
+- **GitHub**: [Click here](https://github.com/Faizme)  
+- **LinkedIn**: [Click here](https://www.linkedin.com/mohammed-faiz-me)  
 
 ---  
 
