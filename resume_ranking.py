@@ -11,11 +11,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 
-# Download necessary resources (fixes NLTK error)
-nltk_dependencies = ["stopwords", "punkt"]
-for dep in nltk_dependencies:
+# Ensure necessary NLTK resources are downloaded
+nltk_dependencies = [("corpora/stopwords", "stopwords"), ("tokenizers/punkt", "punkt")]
+for path, dep in nltk_dependencies:
     try:
-        nltk.data.find(f"tokenizers/{dep}")
+        nltk.data.find(path)
     except LookupError:
         nltk.download(dep)
 
@@ -28,7 +28,7 @@ st.set_page_config(page_title="AI Resume Screening", layout="wide")
 def extract_text_from_pdf(file):
     try:
         pdf = PdfReader(file)
-        text = " ".join([page.extract_text() or "" for page in pdf.pages if page.extract_text()])
+        text = " ".join([page.extract_text() or "" for page in pdf.pages])  # Handle None cases
         return text.strip()
     except Exception as e:
         return f"Error extracting text: {str(e)}"
@@ -60,7 +60,12 @@ st.sidebar.subheader("ℹ️ About")
 st.sidebar.info(
     "**Developed by Mohammed Faiz**\n\n"
     "This application helps recruiters efficiently screen resumes based on job descriptions using AI. "
-    "By utilizing Natural Language Processing (NLP) techniques, the system ranks resumes based on their relevance to the given job description."
+    "By utilizing Natural Language Processing (NLP) techniques, the system ranks resumes based on their relevance to the given job description. "
+    "It also provides keyword analysis using word clouds to highlight essential skills and terms.\n\n"
+    "👨‍💻 **About the Developer:**\n"
+    "Mohammed Faiz is an aspiring software developer with expertise in Python, Java, C, HTML, CSS, JavaScript, and SQL. "
+    "He has experience in data analysis, web development, and AI-driven applications. "
+    "Connect with Faiz on [GitHub](https://github.com/Faizme) or [LinkedIn](https://www.linkedin.com/in/mohammed-faiz-me)."
 )
 
 # Job description input
@@ -73,32 +78,35 @@ uploaded_files = st.file_uploader(
     "Upload resumes (PDF only)", type=["pdf"], accept_multiple_files=True
 )
 
-def extract_text_from_file(file):
-    return extract_text_from_pdf(file)
-
 if uploaded_files and job_description:
     st.header("📊 Ranking Resumes")
     progress = st.progress(0)
-    
-    resumes = [extract_text_from_file(file) for file in uploaded_files]
-    
+
+    resumes = []
+    for file in uploaded_files:
+        text = extract_text_from_pdf(file)
+        if text.startswith("Error extracting text"):
+            st.error(f"❌ Failed to extract text from {file.name}")
+        else:
+            resumes.append(text)
+
     if resumes:
         progress.progress(50)
         scores = rank_resumes(job_description, resumes)
         progress.progress(100)
-        
+
         results = pd.DataFrame({"Resume": [file.name for file in uploaded_files], "Score": scores})
         results = results.sort_values(by="Score", ascending=False)
         st.dataframe(results)
-        
+
         if not results.empty:
             top_candidate = results.iloc[0]
             st.success(f"🏆 Top Candidate: {top_candidate['Resume']} with Score: {top_candidate['Score']:.2f}")
-        
+
         # Download results
         csv = results.to_csv(index=False)
         st.download_button("📥 Download Results as CSV", csv, "ranking_results.csv", "text/csv")
-        
+
         # Word Cloud Visualization
         st.header("📢 Resume Keyword Analysis")
         all_text = " ".join(preprocess_text(resume) for resume in resumes)
@@ -106,4 +114,4 @@ if uploaded_files and job_description:
         fig, ax = plt.subplots()
         ax.imshow(wordcloud, interpolation='bilinear')
         ax.axis("off")
-        st.pyplot(fig)
+        st.pyplot(fig)s
