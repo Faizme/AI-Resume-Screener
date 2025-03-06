@@ -104,7 +104,7 @@ if uploaded_files and job_description:
         scores = rank_resumes(job_description, resumes)
         progress.progress(100)
 
-        if scores:
+        if scores is not None and scores.size > 0:
             results = pd.DataFrame({"Resume": [file.name for file in uploaded_files], "Score": scores})
             results = results.sort_values(by="Score", ascending=False)
             st.dataframe(results)
