@@ -12,9 +12,10 @@ from sklearn.metrics.pairwise import cosine_similarity
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 
-# Set up local NLTK data path
-NLTK_DATA_PATH = os.path.join(os.path.dirname(__file__), "nltk_data")
-nltk.data.path.append(NLTK_DATA_PATH)
+# Set NLTK data path to the repo's nltk_data folder
+nltk.data.path.append(os.path.join(os.path.dirname(__file__), "nltk_data"))
+# Ensure the required tokenizer is available
+nltk.download('punkt', download_dir=os.path.join(os.path.dirname(__file__), "nltk_data"))
 
 # Ensure necessary NLTK resources are available
 nltk_dependencies = [("corpora/stopwords", "stopwords"), ("tokenizers/punkt", "punkt")]
