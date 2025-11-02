@@ -18,7 +18,7 @@ Ensure you have **Python 3.7+** installed.
 
 ### 1️⃣ Clone the Repository  
 ```bash  
-git clone https://github.com/yourusername/AI-Resume-Screener.git  
+git clone https://github.com/faizme/AI-Resume-Screener.git  
 cd AI-Resume-Screener  
 ```
 
